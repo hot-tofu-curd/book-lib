@@ -17,24 +17,6 @@ namespace 图书借还管理系统.Controllers
     [ApiController]
     public class BookController : ControllerBase
     {
-        //判断是否存在此书籍
-        private bool existBook(String titledBookName)
-        {
-            using (MySqlConnection conn = SqlProvider.GetMySqlConnection())
-            {
-                conn.Open();
-                var cmdstr = $"SELECT * from books WHERE Name='{titledBookName}';";
-                MySqlCommand cmd1 = new MySqlCommand(cmdstr, conn);
-                var reader = cmd1.ExecuteReader();
-                if (reader.HasRows)
-                {
-                    conn.Close();
-                    return true;
-                }
-                conn.Close();
-                return false;
-            }
-        }
 
         #region 创建Book
         [HttpPost("createBook")]
@@ -43,7 +25,7 @@ namespace 图书借还管理系统.Controllers
             var titledBookName = StringChecker.AddBookTitle(book.Name);
             String guid = null;
 
-            if (existBook(titledBookName))
+            if (BookChecker.existBook(titledBookName))
                 return BadRequest(new { message = "已有重复书籍" });
             using (MySqlConnection conn = SqlProvider.GetMySqlConnection())
             {
@@ -92,6 +74,8 @@ namespace 图书借还管理系统.Controllers
         [HttpPost("deleteBook")]
         public ActionResult deleteBook(BookQuery bookQuery)
         {
+            if (!BookChecker.existBook(bookQuery))
+                return BadRequest(new { message = "没有此书" });
             String titledBookName = StringChecker.AddBookTitle(bookQuery.Name);
             using (MySqlConnection conn = SqlProvider.GetMySqlConnection())
             {
@@ -151,6 +135,8 @@ namespace 图书借还管理系统.Controllers
         [HttpPost("queryBook")]
         public ActionResult QueryBook([FromBody] BookQuery bookQuery)
         {
+            if (!BookChecker.existBook(bookQuery))
+                return BadRequest(new { message = "没有此书" });
             String titledBookName = StringChecker.AddBookTitle(bookQuery.Name);
             using (MySqlConnection conn = SqlProvider.GetMySqlConnection())
             {
